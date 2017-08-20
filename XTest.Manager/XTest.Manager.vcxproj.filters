@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Source\XTest.Manager.h" />
+    <ClInclude Include="Source\XTest.Manager.Internal.Solution.h" />
+    <ClInclude Include="Source\XTest.Manager.Internal.Predefine.h" />
+    <ClInclude Include="Source\XTest.Manager.Core.Worker.Connection.h" />
+    <ClInclude Include="Source\XTest.Manager.Core.Storage.h" />
+    <ClInclude Include="Source\XTest.Manager.Core.Storage.SolutionFiles.h" />
+    <ClInclude Include="Source\XTest.Manager.Core.Worker.h" />
+    <ClInclude Include="Source\XTest.Manager.Internal.Problem.h" />
+    <ClInclude Include="Source\XTest.Manager.Core.Storage.ProblemFile.h" />
+    <ClInclude Include="Source\Util.uint24.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\XTest.Manager.cpp" />
+    <ClCompile Include="Source\XTest.Manager.Core.Worker.cpp" />
+    <ClCompile Include="Source\XTest.Manager.Core.Worker.Connection.cpp" />
+    <ClCompile Include="Source\XTest.Manager.Core.Storage.SolutionFiles.cpp" />
+    <ClCompile Include="Source\XTest.Manger.Core.Storage.ProblemFile.cpp" />
+    <ClCompile Include="Source\XTest.Manager.Core.Storage.cpp" />
+    <ClCompile Include="Source\XTest.Manager.Core.Storage.ProblemFile.cpp" />
+  </ItemGroup>
+</Project>
