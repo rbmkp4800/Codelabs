@@ -20,7 +20,8 @@ namespace XTest::Manager::_Core::_Storage
 		volatile XTSolutionId reservedSolutionId, queuedSolutionId, storedSolutionId;
 
 		uint64 workspaceId;
-		XLib::File indexFile, tempIndexFile;
+		XLib::File indexFile;
+		//XLib::File tempIndexFile;
 		//XLib::File tempSourcesFile, compressedSourcesFile;
 
 	public:
