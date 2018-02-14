@@ -46,52 +46,55 @@ namespace XTest::Manager
 		friend _Core::Worker;
 		friend _Core::Storage;
 
-	private:
+	private: // meta
 		struct WorkerDesc
 		{
 			XLib::IPv4Address address;
+			_Core::Worker *core;
 		};
 
 		using SolutionsTestingQueue = XLib::CyclicQueue<Internal::Solution*,
 			XLib::CyclicQueueStoragePolicy::InternalStatic<256>>;
 
-		static constexpr uint32 workersLimit = 4;
-
-		//-----------------------------------------------------------------------
-
+	private: // data
 		XLib::AsyncIODispatcher dispatcher;
 		XLib::Thread dispatcherThread;
-		void dispatcherThreadMain();
 
 		XLib::TCPListenSocket workersListenSocket;
 		XLib::TCPListenSocket::DispatchedAsyncTask workersListenTask;
-		void onWorkerSocketAccepted(bool result, XLib::TCPSocket& socket,
-			XLib::IPAddress address, uintptr);
 
-		WorkerDesc workerDescs[workersLimit];
-		_Core::Worker *workers[workersLimit];
-		void onWorkerInitComplete(uint8 workerId);
-		void onWorkerDisconnected(uint8 workerId); // releases worker
-		void onWorkerSolutionStateUpdated(Internal::Solution* solution);
-
+		SolutionsTestingQueue solutionsTestingQueue;
+		XLib::HeapPtr<WorkerDesc> workers;
 		_Core::Storage storage;
-		void onStorageStartupComplete(bool result);
-		void onStorageShutdownComplete();
-		void onStorageSolutionCreationComplete(XTMSubmitSolutionResult result, Internal::Solution* solution);
-
-		XLib::AsyncIODispatcher dispatcher;
-		XLib::Thread dispatcherThread;
-		static uint32 __stdcall DispatcherThreadMain(XTMCore* self);
-		void dispatcherThreadMain();
 
 		XTMCoreCallbacks *callbacks = nullptr;
 
+	private: // code
+		void onWorkerSocketAccepted(bool result,
+			XLib::TCPSocket& socket,
+			XLib::IPAddress address, uintptr);
+		void onWorkerDisconnected(uint8 workerId);
+		void onWorkerSolutionStateUpdated(Internal::Solution* solution);
+		void onWorkerFreeSlotAvailable();
+
+		void onStorageStartupComplete(bool result);
+		void onStorageShutdownComplete();
+		void onStorageSolutionCreationComplete(
+			XTMSubmitSolutionResult result, Internal::Solution* solution);
+
+		static uint32 __stdcall DispatcherThreadMain(XTMCore* self);
+		void dispatcherThreadMain();
+
 	public:
+		XTMCore() = default;
+		~XTMCore() = default;
+
 		bool startup(XTMCoreCallbacks* callbacks, const char* workspacePath, uint16 workersListenPort);
 		void shutdown();
 
 		void submitSolution(const char* source, uint32 sourceLength, XTLanguage language,
 			XTProblemId problemId, XTTestingPolicy testingPolicy, void* context);
+
 		uint64 getWorkspaceId();
 		//void loadSolutionTestingResult();
 	};

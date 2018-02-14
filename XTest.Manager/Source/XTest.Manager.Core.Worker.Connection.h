@@ -32,8 +32,19 @@ namespace XTest::Manager::_Core::_Worker
 		inline Worker& getWorker();
 
 	public:
+		void setConnected(XLib::TCPSocket& socket);
+
 		void sendPacket(uint8 legnth, const void* data);
 		void sendPacket(uint8 length, const void* data, uint32 extensionLength,
 			const void* extensionData, PacketExtensionSentHandler handler);
+
+		void drop();
+
+		template <typename Type>
+		inline void sendPacket(const Type& data)
+		{
+			static_assert(sizeof(Type) < 256, "invalid packet size");
+			sendPacket(sizeof(Type), data);
+		}
 	};
 }

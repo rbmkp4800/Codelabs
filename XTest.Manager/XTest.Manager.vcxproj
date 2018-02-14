@@ -37,7 +37,6 @@
     <ClCompile Include="Source\XTest.Manager.Core.Worker.Connection.cpp" />
     <ClCompile Include="Source\XTest.Manager.cpp" />
     <ClCompile Include="Source\XTest.Manager.Core.Worker.cpp" />
-    <ClCompile Include="Source\XTest.Manger.Core.Storage.ProblemFile.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D15B1C58-2A3F-41C3-9B97-D46545F3F81B}</ProjectGuid>

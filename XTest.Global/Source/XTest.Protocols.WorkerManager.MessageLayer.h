@@ -5,7 +5,6 @@
 #include "XTest.Base.h"
 
 // WorkerInitRequest          M -> W
-//		workspaceId
 //		protocol version
 //----------------------------------
 // WorkerInitResponse         M <- W
@@ -56,6 +55,12 @@
 
 namespace XTest::Protocols::WorkerManager::MessageLayer
 {
+	class ProtocolConstants abstract final
+	{
+	public:
+		static constexpr uint16 Version = 0x0001;
+	};
+
 	enum class PacketType : uint8
 	{
 		None = 0,
@@ -82,7 +87,6 @@ namespace XTest::Protocols::WorkerManager::MessageLayer
 			PacketType type;
 
 			uint16 protocolVersion;
-			uint64 workspaceId;
 
 			inline WorkerInitRequest() : type(PacketType::WorkerInitRequest) {}
 		};

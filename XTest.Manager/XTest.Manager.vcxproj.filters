@@ -17,7 +17,6 @@
     <ClCompile Include="Source\XTest.Manager.Core.Worker.cpp" />
     <ClCompile Include="Source\XTest.Manager.Core.Worker.Connection.cpp" />
     <ClCompile Include="Source\XTest.Manager.Core.Storage.SolutionFiles.cpp" />
-    <ClCompile Include="Source\XTest.Manger.Core.Storage.ProblemFile.cpp" />
     <ClCompile Include="Source\XTest.Manager.Core.Storage.cpp" />
     <ClCompile Include="Source\XTest.Manager.Core.Storage.ProblemFile.cpp" />
   </ItemGroup>

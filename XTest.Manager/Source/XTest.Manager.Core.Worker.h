@@ -15,34 +15,45 @@ namespace XTest::Manager::_Core
 	{
 		friend _Worker::Connection;
 
-	private:
+	private: // meta
+		static constexpr uint32 slotsLimit = 16;
+
+		enum class State : uint8
+		{
+			None = 0,
+
+			InitRequestSent = 1,
+			Active = 2,
+		};
+
 		enum class SlotState : uint8
 		{
 			None = 0,
 		};
 
-		struct Slot
-		{
-			Internal::Solution *solution;
-			SlotState state;
-		};
-
-		static constexpr uint32 slotsLimit = 16;
-
-		//--------------------------------------------------------
-
-		XTMCore *core;
-		uint8 id;
-
-		uint8 slotCount;
+	private: // data
+		Internal::Solution* solutionsSlots[slotsLimit];
+		SlotState slotStates[slotsLimit];
 
 		_Worker::Connection connection;
-		Slot slots[slotsLimit];
 
+		XTMCore *core = nullptr;
+		uint8 id = 0;
+		uint8 slotCount = 0;
+
+		State state = State::None;
+
+	private: // code
 		void onPacketReceived(uint8 length, const void* data);
 		void onDisconnected();
 
 	public:
-		Worker(XTMCore *core, uint8 id, XLib::TCPSocket& socket);
+		Worker() = default;
+		~Worker() = default;
+
+		void initialize(XTMCore *core, uint8 id);
+		void destroy();
+
+		void setConnected(XLib::TCPSocket& socket);
 	};
 }
