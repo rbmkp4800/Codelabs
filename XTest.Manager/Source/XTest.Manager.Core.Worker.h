@@ -24,6 +24,7 @@ namespace XTest::Manager::_Core
 
 			InitRequestSent = 1,
 			Active = 2,
+			SendingSolution = 3,
 		};
 
 		enum class SlotState : uint8
@@ -39,7 +40,7 @@ namespace XTest::Manager::_Core
 
 		XTMCore *core = nullptr;
 		uint8 id = 0;
-		uint8 slotCount = 0;
+		uint8 slotCount = 0, freeSlotCount = 0;
 
 		State state = State::None;
 
@@ -47,13 +48,19 @@ namespace XTest::Manager::_Core
 		void onPacketReceived(uint8 length, const void* data);
 		void onDisconnected();
 
+		inline void revokePendingSolutions();
+
 	public:
 		Worker() = default;
 		~Worker() = default;
 
-		void initialize(XTMCore *core, uint8 id);
-		void destroy();
+		void initialize(XTMCore* core, uint8 id);
 
 		void setConnected(XLib::TCPSocket& socket);
+		void pushSolution(Internal::Solution* solution);
+
+		inline uint8 getSlotCount() { return slotCount; }
+		inline uint8 getFreeSlotCount() { return freeSlotCount; }
+		inline bool canTakeSolution() { return state == State::Active; }
 	};
 }

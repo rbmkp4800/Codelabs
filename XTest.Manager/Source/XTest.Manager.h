@@ -9,9 +9,11 @@
 #include <XLib.System.Network.Socket.h>
 
 #include "XTest.Base.h"
-#include "XTest.Manager.Core.Worker.h"
 #include "XTest.Manager.Core.Storage.h"
 
+// TODO: implement SolutionsTestingQueue using smth like ExtendableCyclicQueue
+
+namespace XTest::Manager::_Core { class Worker; }
 namespace XTest::Manager::Internal { class Solution; }
 
 namespace XTest::Manager
@@ -57,6 +59,8 @@ namespace XTest::Manager
 			XLib::CyclicQueueStoragePolicy::InternalStatic<256>>;
 
 	private: // data
+		_Core::Storage storage;
+
 		XLib::AsyncIODispatcher dispatcher;
 		XLib::Thread dispatcherThread;
 
@@ -65,17 +69,18 @@ namespace XTest::Manager
 
 		SolutionsTestingQueue solutionsTestingQueue;
 		XLib::HeapPtr<WorkerDesc> workers;
-		_Core::Storage storage;
 
 		XTMCoreCallbacks *callbacks = nullptr;
+
+		uint8 workerCount = 0;
 
 	private: // code
 		void onWorkerSocketAccepted(bool result,
 			XLib::TCPSocket& socket,
 			XLib::IPAddress address, uintptr);
 		void onWorkerDisconnected(uint8 workerId);
+		void onWorkerSlotReady(uint8 workerId);
 		void onWorkerSolutionStateUpdated(Internal::Solution* solution);
-		void onWorkerFreeSlotAvailable();
 
 		void onStorageStartupComplete(bool result);
 		void onStorageShutdownComplete();
@@ -87,7 +92,7 @@ namespace XTest::Manager
 
 	public:
 		XTMCore() = default;
-		~XTMCore() = default;
+		~XTMCore();
 
 		bool startup(XTMCoreCallbacks* callbacks, const char* workspacePath, uint16 workersListenPort);
 		void shutdown();
@@ -97,5 +102,7 @@ namespace XTest::Manager
 
 		uint64 getWorkspaceId();
 		//void loadSolutionTestingResult();
+
+		inline bool isRunning() { /* ... */ }
 	};
 }

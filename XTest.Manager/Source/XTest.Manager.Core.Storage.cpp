@@ -6,6 +6,9 @@ using namespace XTest::Manager::_Core;
 using namespace XTest::Manager::_Core::_Storage;
 using namespace XTest::Manager::Internal;
 
+// TODO: deal with constructors of Solution and Problem objects
+//		where they need to be ran in PoolAllocator or here
+
 #define core getCore()
 
 bool Storage::startup()
@@ -13,30 +16,31 @@ bool Storage::startup()
 	diskWorkerThread.create(DiskWorkerThreadMain, this);
 }
 
-void Storage::createSolution(const char* source, uint32 sourceLength,
+void Storage::createSolutionAsync(const char* source, uint32 sourceLength,
 	XTLanguage language, XTProblemId problemId, XTTestingPolicy testingPolicy)
 {
 	Problem *problem = problemCache.find(problemId);
 
-	auto handle = solutionCache.preAllocate();
-	Solution &solution = handle.get();
-	solution.problemId = problemId;
-	solution.language = language;
-	solution.testingPolicy = testingPolicy;
-	solution.state = XTSolutionState::Waiting;
-	solution.source = source;
-	solution.sourceLength = sourceLength;
+	Solution *solution = solutionAllocator.allocate();
+	solution->problemId = problemId;
+	solution->language = language;
+	solution->testingPolicy = testingPolicy;
+	solution->state = XTSolutionState::Waiting;
+	solution->source = source;
+	solution->sourceLength = sourceLength;
+	solution->result = { 0 };
 
 	if (problem)
 	{
-		solutionCache.insertPreAllocated(handle);
-
-		core.onSolutionCreationComplete(XTMSubmitSolutionResult::Success, &solution);
+		solutionCache.insert(solution);
+		core.onStorageSolutionCreationComplete(XTMSubmitSolutionResult::Success, solution);
 	}
 	else
 	{
 		DiskWorkerQueueItem item;
-		item.checkProblemFileAndCompleteSolutionCreation.preAllocatedSolution = 
+		item.type = DiskWorkerQueueItem::Type::CheckProblemFileAndCompleteSolutionCreation;
+		item.checkProblemFileAndCompleteSolutionCreation.solution = solution;
+		diskWorkerQueue.enqueue(item);
 	}
 }
 
@@ -62,11 +66,10 @@ void Storage::diskWorkerThreadMain()
 		DiskWorkerQueueItem item = diskWorkerQueue.dequeue();
 		switch (item.type)
 		{
-			case DiskWorkerQueueItemType::CheckProblemFileAndCompleteSolutionCreation:
+			case DiskWorkerQueueItem::Type::CheckProblemFileAndCompleteSolutionCreation:
 			{
-				auto args = item.checkProblemFileAndCompleteSolutionCreation;
-				Solution &solution = args.preAllocatedSolutionHandle.get();
-				XTProblemId problemId = solution.getProblemId();
+				auto& args = item.checkProblemFileAndCompleteSolutionCreation;
+				XTProblemId problemId = args.solution->getProblemId();
 
 				bool result = false;
 				for each (ProblemFile& file in problemFiles)
@@ -80,20 +83,19 @@ void Storage::diskWorkerThreadMain()
 
 				if (result)
 				{
-					solutionCache.insertPreAllocated(args.preAllocatedSolutionHandle);
-					core.onSolutionCreationComplete(XTMSubmitSolutionResult::Success, &solution);
+					core.onStorageSolutionCreationComplete(XTMSubmitSolutionResult::Success, args.solution);
 				}
 				else
 				{
-					//solutionCache.releasePreAllocated();
-					core.onSolutionCreationComplete(XTMSubmitSolutionResult::SystemError, &solution);
+					solutionAllocator.release(args.solution);
+					core.onStorageSolutionCreationComplete(XTMSubmitSolutionResult::SystemError, args.solution);
 				}
 
 				break;
 			}
 
 		default:
-			break;
+			Debug::Crash(DbgMsgFmt("invalid DiskWorkerQueueItem::Type"));
 		}
 	}
 

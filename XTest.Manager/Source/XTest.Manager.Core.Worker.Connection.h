@@ -33,12 +33,11 @@ namespace XTest::Manager::_Core::_Worker
 
 	public:
 		void setConnected(XLib::TCPSocket& socket);
+		void drop();
 
 		void sendPacket(uint8 legnth, const void* data);
 		void sendPacket(uint8 length, const void* data, uint32 extensionLength,
 			const void* extensionData, PacketExtensionSentHandler handler);
-
-		void drop();
 
 		template <typename Type>
 		inline void sendPacket(const Type& data)

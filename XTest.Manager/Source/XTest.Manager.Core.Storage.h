@@ -31,19 +31,17 @@ namespace XTest::Manager::_Core
 		//using SolutionCache = XLib::IntrusiveSet<Internal::Solution, >;
 		//using ProblemCache = XLib::IntrusiveSet<Internal::Problem, >;
 
-		enum class DiskWorkerQueueItemType : uint8
-		{
-			None = 0,
-			CheckProblemFileAndCompleteSolutionCreation = 1,
-		};
-
 		struct DiskWorkerQueueItem
 		{
-			DiskWorkerQueueItemType type;
+			enum class Type : uint8
+			{
+				None = 0,
+				CheckProblemFileAndCompleteSolutionCreation = 1,
+			} type;
 
 			union
 			{
-				Solution* preAllocatedSolution;
+				Solution* solution;
 			} checkProblemFileAndCompleteSolutionCreation;
 		};
 
@@ -74,9 +72,9 @@ namespace XTest::Manager::_Core
 		bool startup();
 		void shutdown();
 
-		void createSolution(const char* source, uint32 sourceLength,
+		void createSolutionAsync(const char* source, uint32 sourceLength,
 			XTLanguage language, XTProblemId problemId, XTTestingPolicy testingPolicy);
 
-		void fetchSolution();
+		void fetchSolutionAsync();
 	};
 }

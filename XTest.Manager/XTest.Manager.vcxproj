@@ -22,7 +22,6 @@
     <ClInclude Include="Source\Util.uint24.h" />
     <ClInclude Include="Source\XTest.Manager.Core.Storage.ProblemFile.h" />
     <ClInclude Include="Source\XTest.Manager.h" />
-    <ClInclude Include="Source\XTest.Manager.Internal.Predefine.h" />
     <ClInclude Include="Source\XTest.Manager.Internal.Problem.h" />
     <ClInclude Include="Source\XTest.Manager.Internal.Solution.h" />
     <ClInclude Include="Source\XTest.Manager.Core.Storage.h" />

@@ -14,12 +14,12 @@ namespace XTest::Manager::Internal
 		friend class _Core::Storage;
 
 	private:
-		XTSolutionId id = invalidSolutionId;
-		XTProblemId problemId = invalidProblemId;
-		const Problem *problem = nullptr;
-		XTLanguage language = XTLanguage::None;
-		XTTestingPolicy testingPolicy = XTTestingPolicy::None;
-		XTSolutionState state = XTSolutionState::None;
+		XTSolutionId id;
+		XTProblemId problemId;
+		const Problem *problem;
+		XTLanguage language;
+		XTTestingPolicy testingPolicy;
+		XTSolutionState state;
 
 		const char *source;
 		uint32 sourceLength;
@@ -37,12 +37,12 @@ namespace XTest::Manager::Internal
 				char *error;
 				uint16 errorLength;
 			};
-		};
+		} result;
 
 		Solution() = default;
 
 	public:
-		inline XTSolutionId geId() const { return id; }
+		inline XTSolutionId getId() const { return id; }
 		inline XTProblemId getProblemId() const { return problemId; }
 		inline const Problem* getProblem() const { return problem; }
 		inline XTLanguage getLanguage() const { return language; }

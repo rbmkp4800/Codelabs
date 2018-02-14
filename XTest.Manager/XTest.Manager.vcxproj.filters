@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClInclude Include="Source\XTest.Manager.h" />
     <ClInclude Include="Source\XTest.Manager.Internal.Solution.h" />
-    <ClInclude Include="Source\XTest.Manager.Internal.Predefine.h" />
     <ClInclude Include="Source\XTest.Manager.Core.Worker.Connection.h" />
     <ClInclude Include="Source\XTest.Manager.Core.Storage.h" />
     <ClInclude Include="Source\XTest.Manager.Core.Storage.SolutionFiles.h" />

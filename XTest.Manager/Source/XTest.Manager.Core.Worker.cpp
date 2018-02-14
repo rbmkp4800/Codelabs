@@ -4,6 +4,9 @@
 #include "XTest.Manager.h"
 #include "XTest.Protocols.WorkerManager.MessageLayer.h"
 
+#define InitErrorMsgFmt(message) DbgMsgFmt("worker initialization error (" message ")")
+#define CommErrorMsgFmt(message) DbgMsgFmt("worker communication error (" message ")")
+
 using namespace XLib;
 using namespace XTest::Manager::_Core;
 using namespace XTest::Protocols::WorkerManager::MessageLayer;
@@ -16,7 +19,7 @@ void Worker::onPacketReceived(uint8 length, const void* data)
 	{
 		if (packetType != PacketType::WorkerInitResponse)
 		{
-			Debug::Warning(DbgMsgFmt("worker initialization error. Invalid response"));
+			Debug::Warning(InitErrorMsgFmt("invalid response"));
 			state = State::None;
 			connection.drop();
 			return;
@@ -27,38 +30,50 @@ void Worker::onPacketReceived(uint8 length, const void* data)
 
 		if (packet.slotCount > slotsLimit)
 		{
-			Debug::Warning(DbgMsgFmt("worker initialization error. Invalid slot count"));
+			Debug::Warning(InitErrorMsgFmt("invalid slot count"));
 			state = State::None;
 			connection.drop();
 			return;
 		}
 
 		slotCount = packet.slotCount;
+		freeSlotCount = slotCount;
 		state = State::Active;
+
+		core->onWorkerSlotReady(id);
+
 		return;
 	}
 
 	switch (packetType)
 	{
-		case PacketType::WorkerInitResponse:
-		{
-			core->onWorkerInitComplete(id);
-			break;
-		}
-
 		default:
-			break;
+		{
+			Debug::Warning(CommErrorMsgFmt("invalid packet code"));
+			core->onWorkerDisconnected(id);
+			revokePendingSolutions();
+			connection.drop();
+			state = State::None;
+			return;
+		}
 	}
 }
 
 void Worker::onDisconnected()
 {
 	core->onWorkerDisconnected(id);
+	revokePendingSolutions();
 }
 
-void Worker::initialize(XTMCore *core, uint8 id)
+inline void Worker::revokePendingSolutions()
 {
 
+}
+
+void Worker::initialize(XTMCore* core, uint8 id)
+{
+	this->core = core;
+	this->id = id;
 }
 
 void Worker::setConnected(XLib::TCPSocket& socket)
