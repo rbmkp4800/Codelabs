@@ -37,7 +37,7 @@ namespace
 
 	struct IndexFileRecord
 	{
-		XTProblemId problemId;
+		ProblemId problemId;
 		uint32 index;
 	};
 
@@ -103,10 +103,10 @@ namespace
 		uint32 checksum;
 		struct
 		{
-			XTProblemId problemId;
+			ProblemId problemId;
 			uint32 sourceEndOffset;
-			XTTestingPolicy testingPolicy;
-			XTLanguage language;
+			TestingPolicy testingPolicy;
+			Language language;
 		} solutions[SolutionsFileConfig::SolutionsPerSegment];
 	};
 
@@ -127,9 +127,9 @@ namespace
 	{
 		uint32 sourceLength;
 		uint32 checksum;
-		XTProblemId solutionDesc;
-		XTLanguage language;
-		XTTestingPolicy testingPolicy;
+		ProblemId solutionDesc;
+		Language language;
+		TestingPolicy testingPolicy;
 	};*/
 
 	/*struct IndexTempFileBlockHeader

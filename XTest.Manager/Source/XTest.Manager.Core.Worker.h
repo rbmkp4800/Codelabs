@@ -6,7 +6,7 @@
 
 #include "XTest.Manager.Core.Worker.Connection.h"
 
-namespace XTest::Manager { class XTMCore; }
+namespace XTest::Manager { class ManagerCore; }
 namespace XTest::Manager::Internal { class Solution; }
 
 namespace XTest::Manager::_Core
@@ -21,10 +21,9 @@ namespace XTest::Manager::_Core
 		enum class State : uint8
 		{
 			None = 0,
-
-			InitRequestSent = 1,
-			Active = 2,
-			SendingSolution = 3,
+			InitRequestSent,
+			Active,
+			SendingSolution,
 		};
 
 		enum class SlotState : uint8
@@ -38,7 +37,7 @@ namespace XTest::Manager::_Core
 
 		_Worker::Connection connection;
 
-		XTMCore *core = nullptr;
+		ManagerCore *core = nullptr;
 		uint8 id = 0;
 		uint8 slotCount = 0, freeSlotCount = 0;
 
@@ -54,13 +53,13 @@ namespace XTest::Manager::_Core
 		Worker() = default;
 		~Worker() = default;
 
-		void initialize(XTMCore* core, uint8 id);
+		void initialize(ManagerCore* core, uint8 id);
 
 		void setConnected(XLib::TCPSocket& socket);
 		void pushSolution(Internal::Solution* solution);
 
 		inline uint8 getSlotCount() { return slotCount; }
 		inline uint8 getFreeSlotCount() { return freeSlotCount; }
-		inline bool canTakeSolution() { return state == State::Active; }
+		inline bool canAcceptSolution() { return state == State::Active; }
 	};
 }

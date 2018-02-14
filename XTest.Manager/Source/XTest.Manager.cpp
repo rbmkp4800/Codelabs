@@ -5,23 +5,21 @@
 #include "XTest.Manager.Core.Worker.h"
 
 // TODO: refactor workers objects allocation
-
-// Scheduler logic:
-//		
+// TODO: handle State::Startup in shutdown()
 
 using namespace XLib;
 using namespace XTest::Manager;
 using namespace XTest::Manager::Internal;
 using namespace XTest::Manager::_Core;
 
-XTMCore::~XTMCore()
+ManagerCore::~ManagerCore()
 {
 	Debug::CrashCondition(isRunning(), DbgMsgFmt("object must be shut down properly"));
 }
 
 // workers ==================================================================================//
 
-void XTMCore::onWorkerSocketAccepted(bool result, TCPSocket& socket, IPAddress address, uintptr)
+void ManagerCore::onWorkerSocketAccepted(bool result, TCPSocket& socket, IPAddress address, uintptr)
 {
 	if (!result)
 	{
@@ -50,74 +48,121 @@ void XTMCore::onWorkerSocketAccepted(bool result, TCPSocket& socket, IPAddress a
 	}
 }
 
-void XTMCore::onWorkerDisconnected(uint8 workerId)
+void ManagerCore::onWorkerDisconnected(uint8 workerId)
 {
 
 }
 
-void XTMCore::onWorkerSlotReady(uint8 workerId)
+void ManagerCore::onWorkerSlotReady(uint8 workerId)
 {
-	// call scheduler. Try to pull solution from queue
+	if (solutionTestingQueue.isEmpty())
+		return;
+
+	Solution *solution = solutionTestingQueue.dequeue();
+	workers[workerId].core->pushSolution(solution);
 }
 
-void XTMCore::onWorkerSolutionStateUpdated(Internal::Solution* solution)
+void ManagerCore::onWorkerSolutionStateUpdated(Internal::Solution* solution)
 {
 
 }
 
 // storage ==================================================================================//
 
-void XTMCore::onStorageStartupComplete(bool result)
+void ManagerCore::onStorageConfigFileLoaded(
+	const IPv4Address* workerAddresses, uint8 workerAddressCount)
 {
+	Debug::CrashConditionOnDebug(state != State::Startup, DbgMsgFmt("invalid state"));
+
+	workers.resize(workerAddressCount);
+	workerCount = workerAddressCount;
+}
+
+void ManagerCore::onStorageStartupComplete(bool result)
+{
+	state = State::Active;
 	callbacks->onStartupComplete(/*result*/);
 }
 
-void XTMCore::onStorageShutdownComplete()
+void ManagerCore::onStorageShutdownComplete()
 {
 	for (uint8 i = 0; i < workerCount; i++)
 	{
 		if (workers[i].core)
 			Heap::Release(workers[i].core);
 	}
+	state = State::Down;
 	callbacks->onShutdownComplete();
 }
 
-void XTMCore::onStorageSolutionCreationComplete(
-	XTMSubmitSolutionResult result, Internal::Solution* solution)
+void ManagerCore::onStorageSolutionCreationComplete(
+	SubmitSolutionResult result, Internal::Solution* solution)
 {
 	callbacks->onSolutionSubmitComplete(result, solution->getId());
 
-	// call scheduler. Try to push solution to one of the workers or put it to the queue
+	// select worker with minimum load
+	uint8 minLoad = 0xFF;
+	Worker *minLoadWorker = nullptr;
+	for (uint8 i = 0; i < workerCount; i++)
+	{
+		Worker &worker = *workers[i].core;
+
+		if (!worker.canAcceptSolution())
+			continue;
+
+		uint8 load = uint8(uint16(worker.getFreeSlotCount()) * 0xFF / uint16(worker.getSlotCount()));
+		if (minLoad > load)
+		{
+			minLoad = load;
+			minLoadWorker = &worker;
+		}
+	}
+
+	if (minLoad == 0xFF) // if all slots are busy
+		solutionTestingQueue.enqueue(solution);
+	else
+		minLoadWorker->pushSolution(solution);
 }
 
 // public interface =========================================================================//
 
-bool XTMCore::startup(XTMCoreCallbacks* callbacks,
+bool ManagerCore::startup(ManagerCallbacks* callbacks,
 	const char* workspacePath, uint16 workersListenPort)
 {
+	if (state != State::Down)
+	{
+		Debug::Warning(DbgMsgFmt("invalid state"));
+		return false;
+	}
+
 	workersListenSocket.initialize(IPv4AddressAny, workersListenPort);
 	dispatcher.associate(workersListenSocket);
 	workersListenSocket.start();
 	workersListenSocket.asyncAccept(workersListenTask,
-		SocketAcceptedHandler(*this, &XTMCore::onWorkerSocketAccepted));
+		SocketAcceptedHandler(this, &ManagerCore::onWorkerSocketAccepted));
 
 	dispatcherThread.create(DispatcherThreadMain, this);
 
-	return true;
+	return storage.startup();
 }
 
-void XTMCore::shutdown()
+void ManagerCore::shutdown()
 {
+	if (state != State::Active)
+	{
+		Debug::Warning(DbgMsgFmt("invalid state"));
+		return;
+	}
+
 	// proper shutdown
 }
 
-void XTMCore::submitSolution(const char* source, uint32 sourceLength, XTLanguage language,
-	XTProblemId problemId, XTTestingPolicy testingPolicy, void* context)
+void ManagerCore::submitSolution(const char* source, uint32 sourceLength,
+	Language language, ProblemId problemId, TestingPolicy testingPolicy)
 {
-	if (sourceLength > solutionSourceLengthLimit)
-		callbacks->onSolutionSubmitComplete(XTMSubmitSolutionResult::InvalidSourceLength, invalidSolutionId);
-	if (!XTIsValidProblemId(problemId))
-		callbacks->onSolutionSubmitComplete(XTMSubmitSolutionResult::InvalidProblemId, invalidSolutionId);
+	if (state != State::Active)						{ callbacks->onSolutionSubmitComplete(SubmitSolutionResult::InvalidState,			invalidSolutionId); return; }
+	if (sourceLength > solutionSourceLengthLimit)	{ callbacks->onSolutionSubmitComplete(SubmitSolutionResult::InvalidSourceLength,	invalidSolutionId); return; }
+	if (!IsValidProblemId(problemId))				{ callbacks->onSolutionSubmitComplete(SubmitSolutionResult::InvalidProblemId,		invalidSolutionId); return; }
 	// TODO: check testingPolicy
 
 	storage.createSolutionAsync(source, sourceLength, language, problemId, testingPolicy);

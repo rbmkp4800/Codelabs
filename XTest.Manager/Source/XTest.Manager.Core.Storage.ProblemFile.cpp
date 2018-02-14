@@ -31,11 +31,11 @@ namespace
 	//		TestRunInfo testingInfo[testCount];
 	//		uint32 recordChecksum;
 
-	static_assert(sizeof(XTTestRunInfo) % 4 == 0, "TestRunInfo must be aligned to 4 bytes");
+	static_assert(sizeof(TestRunInfo) % 4 == 0, "TestRunInfo must be aligned to 4 bytes");
 }
 #pragma pack(pop)
 
-bool ProblemFile::open(XTProblemId problemId)
+bool ProblemFile::open(ProblemId problemId)
 {
 	Debug::CrashConditionOnDebug(file.isInitialized(), DbgMsgFmt("already opened"));
 
@@ -80,7 +80,7 @@ bool ProblemFile::open(XTProblemId problemId)
 	// TODO: add workspaceId check
 
 	uint64 recordsArraySize = file.getSize() - sizeof(FileHeader);
-	uint32 recordSize = sizeof(XTSolutionId) + sizeof(XTTestRunInfo) * header.testCount + sizeof(uint32);
+	uint32 recordSize = sizeof(SolutionId) + sizeof(TestRunInfo) * header.testCount + sizeof(uint32);
 	if (recordsArraySize % recordSize != 0)
 	{
 		Debug::Warning(DbgMsgFmt("file corrupted"));

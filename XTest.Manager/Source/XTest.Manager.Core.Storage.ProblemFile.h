@@ -12,15 +12,15 @@ namespace XTest::Manager::_Core::_Storage
 	{
 	private:
 		XLib::File file;
-		XTProblemId problemId = invalidProblemId;
+		ProblemId problemId = invalidProblemId;
 		uint32 recordCount = 0;
 		uint16 testCount = 0;
 
 	public:
-		bool open(XTProblemId problemId);
+		bool open(ProblemId problemId);
 		void close();
 
 		inline bool isOpened() { return file.isInitialized(); }
-		inline XTProblemId getProblemId() { return problemId; }
+		inline ProblemId getProblemId() { return problemId; }
 	};
 }

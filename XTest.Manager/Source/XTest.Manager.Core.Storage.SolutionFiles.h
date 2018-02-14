@@ -17,7 +17,7 @@ namespace XTest::Manager::_Core::_Storage
 		static constexpr uint32 writeQueueIndexMask = writeQueueSize - 1;
 
 		Internal::Solution *writeQueue[writeQueueSize];
-		volatile XTSolutionId reservedSolutionId, queuedSolutionId, storedSolutionId;
+		volatile SolutionId reservedSolutionId, queuedSolutionId, storedSolutionId;
 
 		uint64 workspaceId;
 		XLib::File indexFile;

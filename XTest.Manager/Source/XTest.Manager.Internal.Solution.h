@@ -14,12 +14,12 @@ namespace XTest::Manager::Internal
 		friend class _Core::Storage;
 
 	private:
-		XTSolutionId id;
-		XTProblemId problemId;
+		SolutionId id;
+		ProblemId problemId;
 		const Problem *problem;
-		XTLanguage language;
-		XTTestingPolicy testingPolicy;
-		XTSolutionState state;
+		Language language;
+		TestingPolicy testingPolicy;
+		SolutionState state;
 
 		const char *source;
 		uint32 sourceLength;
@@ -28,7 +28,7 @@ namespace XTest::Manager::Internal
 		{
 			struct
 			{
-				XTTestRunInfo *testingInfo;
+				TestRunInfo *testingInfo;
 				uint16 ranTestCount;
 			};
 
@@ -42,12 +42,12 @@ namespace XTest::Manager::Internal
 		Solution() = default;
 
 	public:
-		inline XTSolutionId getId() const { return id; }
-		inline XTProblemId getProblemId() const { return problemId; }
+		inline SolutionId getId() const { return id; }
+		inline ProblemId getProblemId() const { return problemId; }
 		inline const Problem* getProblem() const { return problem; }
-		inline XTLanguage getLanguage() const { return language; }
-		inline XTTestingPolicy getTestingPolicy() const { return testingPolicy; }
-		inline XTSolutionState getState() const { return state; }
+		inline Language getLanguage() const { return language; }
+		inline TestingPolicy getTestingPolicy() const { return testingPolicy; }
+		inline SolutionState getState() const { return state; }
 
 		inline const char* getSource() const { return source; }
 		inline uint32 getSourceLength() const { return sourceLength; }

@@ -14,7 +14,7 @@ namespace XTest::Manager::Internal
 		friend class _Core::Storage;
 
 	private:
-		XTProblemId id = invalidProblemId;
+		ProblemId id = invalidProblemId;
 		uint16 checkerVersion = 0;
 		uint16 testCount = 0;
 		uint8 *points = nullptr;
@@ -22,9 +22,9 @@ namespace XTest::Manager::Internal
 		Problem() = default;
 
 	public:
-		inline XTProblemId getId() const { return id; }
+		inline ProblemId getId() const { return id; }
 	};
 
-	inline bool operator > (XTProblemId leftProblemId, const Problem& rightProblem) { return leftProblemId > rightProblem.getId(); }
-	inline bool operator > (const Problem& leftProblem, XTProblemId rightProblemId) { return leftProblem.getId() > rightProblemId; }
+	inline bool operator > (ProblemId leftProblemId, const Problem& rightProblem) { return leftProblemId > rightProblem.getId(); }
+	inline bool operator > (const Problem& leftProblem, ProblemId rightProblemId) { return leftProblem.getId() > rightProblemId; }
 }

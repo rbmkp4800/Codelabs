@@ -70,7 +70,7 @@ inline void Worker::revokePendingSolutions()
 
 }
 
-void Worker::initialize(XTMCore* core, uint8 id)
+void Worker::initialize(ManagerCore* core, uint8 id)
 {
 	this->core = core;
 	this->id = id;

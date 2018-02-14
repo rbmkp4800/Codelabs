@@ -12,16 +12,18 @@
 #include "XTest.Manager.Core.Storage.h"
 
 // TODO: implement SolutionsTestingQueue using smth like ExtendableCyclicQueue
+// TODO: implement proper storage startup result handling (and results enum)
 
 namespace XTest::Manager::_Core { class Worker; }
 namespace XTest::Manager::Internal { class Solution; }
 
 namespace XTest::Manager
 {
-	enum class XTMSubmitSolutionResult : uint8
+	enum class SubmitSolutionResult : uint8
 	{
 		Success = 0,
 
+		InvalidState,
 		InvalidSourceLength,
 		InvalidLanguage,
 		InvalidProblemId,
@@ -30,32 +32,40 @@ namespace XTest::Manager
 		SystemError,
 	};
 
-	class XTMCoreCallbacks
+	class ManagerCallbacks
 	{
-		friend class XTMCore;
+		friend class ManagerCore;
 
 	protected:
 		void onStartupComplete();
 		void onShutdownComplete();
-		void onSolutionSubmitComplete(XTMSubmitSolutionResult result, XTSolutionId id);
+		void onSolutionSubmitComplete(SubmitSolutionResult result, SolutionId id);
 		void onSolutionStateUpdated();
 		// void onSolutionTestingResultsLoaded();
 		// ...
 	};
 
-	class XTMCore : public XLib::NonCopyable
+	class ManagerCore : public XLib::NonCopyable
 	{
 		friend _Core::Worker;
 		friend _Core::Storage;
 
 	private: // meta
+		enum class State : uint8
+		{
+			Down = 0,
+			Startup,
+			Active,
+			Shutdown,
+		};
+
 		struct WorkerDesc
 		{
 			XLib::IPv4Address address;
 			_Core::Worker *core;
 		};
 
-		using SolutionsTestingQueue = XLib::CyclicQueue<Internal::Solution*,
+		using SolutionTestingQueue = XLib::CyclicQueue<Internal::Solution*,
 			XLib::CyclicQueueStoragePolicy::InternalStatic<256>>;
 
 	private: // data
@@ -67,11 +77,12 @@ namespace XTest::Manager
 		XLib::TCPListenSocket workersListenSocket;
 		XLib::TCPListenSocket::DispatchedAsyncTask workersListenTask;
 
-		SolutionsTestingQueue solutionsTestingQueue;
+		SolutionTestingQueue solutionTestingQueue;
 		XLib::HeapPtr<WorkerDesc> workers;
 
-		XTMCoreCallbacks *callbacks = nullptr;
+		ManagerCallbacks *callbacks = nullptr;
 
+		State state = State::Down;
 		uint8 workerCount = 0;
 
 	private: // code
@@ -82,23 +93,26 @@ namespace XTest::Manager
 		void onWorkerSlotReady(uint8 workerId);
 		void onWorkerSolutionStateUpdated(Internal::Solution* solution);
 
+		void onStorageConfigFileLoaded(
+			const XLib::IPv4Address* workerAddresses, uint8 workerAddressCount);
 		void onStorageStartupComplete(bool result);
 		void onStorageShutdownComplete();
 		void onStorageSolutionCreationComplete(
-			XTMSubmitSolutionResult result, Internal::Solution* solution);
+			SubmitSolutionResult result, Internal::Solution* solution);
 
-		static uint32 __stdcall DispatcherThreadMain(XTMCore* self);
+		static uint32 __stdcall DispatcherThreadMain(ManagerCore* self);
 		void dispatcherThreadMain();
 
 	public:
-		XTMCore() = default;
-		~XTMCore();
+		ManagerCore() = default;
+		~ManagerCore();
 
-		bool startup(XTMCoreCallbacks* callbacks, const char* workspacePath, uint16 workersListenPort);
+		bool startup(ManagerCallbacks* callbacks,
+			const char* workspacePath, uint16 workersListenPort);
 		void shutdown();
 
-		void submitSolution(const char* source, uint32 sourceLength, XTLanguage language,
-			XTProblemId problemId, XTTestingPolicy testingPolicy, void* context);
+		void submitSolution(const char* source, uint32 sourceLength,
+			Language language, ProblemId problemId, TestingPolicy testingPolicy);
 
 		uint64 getWorkspaceId();
 		//void loadSolutionTestingResult();

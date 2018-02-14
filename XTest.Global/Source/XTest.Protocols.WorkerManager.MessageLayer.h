@@ -107,9 +107,9 @@ namespace XTest::Protocols::WorkerManager::MessageLayer
 			PacketType type;
 
 			uint8 slotId;
-			XTProblemId problemId;
-			XTLanguage language;
-			XTTestingPolicy testingPolicy;
+			ProblemId problemId;
+			Language language;
+			TestingPolicy testingPolicy;
 			uint32 checkerVersion;
 
 			inline TestSolutionRequest() : type(PacketType::TestSolutionRequest) {}

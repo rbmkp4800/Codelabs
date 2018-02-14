@@ -16,7 +16,7 @@
 
 // TODO: check if we need RW lock on solution and problem caches
 
-namespace XTest::Manager { class XTMCore; }
+namespace XTest::Manager { class ManagerCore; }
 
 namespace XTest::Manager::_Core
 {
@@ -66,14 +66,16 @@ namespace XTest::Manager::_Core
 		static uint32 __stdcall DiskWorkerThreadMain(Storage* self);
 		void diskWorkerThreadMain();
 
-		inline XTMCore& getCore();
+		inline bool loadConfigFile();
+
+		inline ManagerCore& getCore();
 
 	public:
 		bool startup();
 		void shutdown();
 
 		void createSolutionAsync(const char* source, uint32 sourceLength,
-			XTLanguage language, XTProblemId problemId, XTTestingPolicy testingPolicy);
+			Language language, ProblemId problemId, TestingPolicy testingPolicy);
 
 		void fetchSolutionAsync();
 	};
