@@ -15,17 +15,20 @@ namespace XTest::Manager::_Core::_Worker
 
 	class Connection : public XLib::NonCopyable
 	{
-	private:
+	private: // meta
 		static constexpr uint32 receiveBufferSize = 128;
 		static constexpr uint32 sendBufferSize = 64;
+		
+	private: // data
+		byte receiveBuffer[receiveBufferSize];
+		byte sendBuffer[sendBufferSize];
 
 		XLib::TCPSocket socket;
 		XLib::DispatchedAsyncTask receiveTask, sendTask;
 
-		byte receiveBuffer[receiveBufferSize];
-		byte sendBuffer[sendBufferSize];
 		uint16 receiveBufferBytesUsed, receiveBufferBytesConsumed;
 
+	private: // code
 		void onReceiveCompleted(bool result, uint32 receivedSize, uintptr);
 		void onSendCompleted(bool result, uint32 sentSize, uintptr);
 

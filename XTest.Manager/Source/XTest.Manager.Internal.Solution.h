@@ -6,6 +6,7 @@
 #include "XTest.Base.h"
 
 namespace XTest::Manager::_Core { class Storage; }
+namespace XTest::Manager::Internal { class Problem; }
 
 namespace XTest::Manager::Internal
 {
@@ -26,11 +27,7 @@ namespace XTest::Manager::Internal
 
 		union
 		{
-			struct
-			{
-				TestRunInfo *testingInfo;
-				uint16 ranTestCount;
-			};
+			TestRunInfo *testingInfo;
 
 			struct
 			{
@@ -51,5 +48,7 @@ namespace XTest::Manager::Internal
 
 		inline const char* getSource() const { return source; }
 		inline uint32 getSourceLength() const { return sourceLength; }
+
+		inline const TestRunInfo* getTestingInfo() const { return result.testingInfo; }
 	};
 }

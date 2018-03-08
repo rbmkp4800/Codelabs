@@ -19,7 +19,8 @@ ManagerCore::~ManagerCore()
 
 // workers ==================================================================================//
 
-void ManagerCore::onWorkerSocketAccepted(bool result, TCPSocket& socket, IPAddress address, uintptr)
+void ManagerCore::onWorkerSocketAccepted(bool result,
+	TCPSocket& socket, IPAddress address, uintptr)
 {
 	if (!result)
 	{

@@ -1,11 +1,18 @@
 #include <XLib.Debug.h>
 #include <XLib.StringWriter.h>
+#include <XLib.Crypto.CRC.h>
 
 #include "XTest.Manager.Core.Storage.ProblemFile.h"
+
+#include "XTest.Manager.Internal.Problem.h"
+
+// TODO: deal with problem.points allocation
+// TODO: add disk operations error handling
 
 using namespace XLib;
 using namespace XTest;
 using namespace XTest::Manager::_Core::_Storage;
+using namespace XTest::Manager::Internal;
 
 #pragma pack(push, 4)
 namespace
@@ -35,7 +42,7 @@ namespace
 }
 #pragma pack(pop)
 
-bool ProblemFile::open(ProblemId problemId)
+bool ProblemFile::open(ProblemId problemId, Problem& problem)
 {
 	Debug::CrashConditionOnDebug(file.isInitialized(), DbgMsgFmt("already opened"));
 
@@ -87,21 +94,76 @@ bool ProblemFile::open(ProblemId problemId)
 		return false;
 	}
 
-	this->problemId = problemId;
+	problem.id = problemId;
+	problem.checkerVersion = header.checkerVersion;
+	problem.testCount = header.testCount;
+	//problem.points = ;
+
+	this->problem = &problem;
 	this->recordCount = recordsArraySize / recordSize;;
 	this->testCount = header.testCount;
+	this->endOfFile = true;
 
 	return true;
 }
 
 void ProblemFile::close()
 {
-	if (file.isInitialized())
+	if (problem != nullptr)
 	{
 		file.close();
 
-		problemId = invalidProblemId;
+		problem = nullptr;
 		recordCount = 0;
 		testCount = 0;
+		endOfFile = false;
 	}
+}
+
+uint32 ProblemFile::syncWriteTestingInfo(SolutionId solutionId, const TestRunInfo* testingInfo)
+{
+	Debug::CrashConditionOnDebug(problem == nullptr, DbgMsgFmt("not initialized"));
+
+	CRC32 crc;
+	crc.process(solutionId);
+	crc.process(testingInfo, testCount * sizeof(TestRunInfo));
+
+	if (!endOfFile)
+	{
+		file.setPosition(0, FilePosition::End);
+		endOfFile = true;
+	}
+
+	file.write(solutionId);
+	file.write(testingInfo, testCount * sizeof(TestRunInfo));
+	file.write(crc.getValue());
+
+	uint32 recordId = recordCount;
+	recordCount++;
+
+	return recordId;
+}
+
+bool ProblemFile::syncReadTestingInfo(uint32 recordIndex, TestRunInfo* testingInfo,
+	SolutionId& solutionId)
+{
+	Debug::CrashConditionOnDebug(problem == nullptr, DbgMsgFmt("not initialized"));
+	
+	if (recordIndex >= recordCount)
+		return false;
+
+	const uint32 recordSize = sizeof(SolutionId) + sizeof(TestRunInfo) * testCount + sizeof(uint32);
+	file.setPosition(sizeof(FileHeader) + recordSize * recordIndex);
+	endOfFile = false;
+
+	uint32 crcCheck = 0;
+	file.read(solutionId);
+	file.read(testingInfo, testCount * sizeof(TestRunInfo));
+	file.read(crcCheck);
+	
+	CRC32 crc;
+	crc.process(solutionId);
+	crc.process(testingInfo, testCount * sizeof(TestRunInfo));
+
+	return crc.getValue() == crcCheck;
 }

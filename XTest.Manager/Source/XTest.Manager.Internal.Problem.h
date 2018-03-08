@@ -5,13 +5,13 @@
 
 #include "XTest.Base.h"
 
-namespace XTest::Manager::_Core { class Storage; }
+namespace XTest::Manager::_Core::_Storage { class ProblemFile; }
 
 namespace XTest::Manager::Internal
 {
 	class Problem : public XLib::NonCopyable
 	{
-		friend class _Core::Storage;
+		friend class _Core::_Storage::ProblemFile;
 
 	private:
 		ProblemId id = invalidProblemId;

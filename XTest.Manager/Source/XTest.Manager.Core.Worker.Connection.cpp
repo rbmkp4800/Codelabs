@@ -38,8 +38,11 @@ void Connection::onReceiveCompleted(bool result, uint32 receivedSize, uintptr)
 						receiveBufferBytesConsumed + sizeof(PacketHeader));
 					void* extensionReceiveBuffer = nullptr;
 
-					worker.onPacketReceived(packetLength, receiveBuffer + receiveBufferBytesConsumed +
-						sizeof(PacketHeader) + sizeof(uint32), &extensionReceiveBuffer);
+					const void *packetData = receiveBuffer + receiveBufferBytesConsumed +
+						sizeof(PacketHeader) + sizeof(uint32);
+
+					worker.onPacketReceived(packetLength, packetData,
+						extensionLength, &extensionReceiveBuffer);
 
 					socket.asyncReceive(extensionReceiveBuffer, )
 
@@ -67,4 +70,20 @@ void Connection::onReceiveCompleted(bool result, uint32 receivedSize, uintptr)
 			}
 		}
 	}
+}
+
+void Connection::onSendCompleted(bool result, uint32 sentSize, uintptr)
+{
+
+}
+
+void Connection::setConnected(XLib::TCPSocket& socket)
+{
+	this->socket = move(socket);
+}
+
+void Connection::drop()
+{
+	//socket.disconect();
+	socket.destroy();
 }

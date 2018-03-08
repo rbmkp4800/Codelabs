@@ -44,7 +44,9 @@ namespace XTest::Manager::_Core
 		State state = State::None;
 
 	private: // code
-		void onPacketReceived(uint8 length, const void* data);
+		void onPacketReceived(uint8 length, const void* data,
+			uint32 extensionLength, void** extensionReceiveBuffer);
+		void onPacketExtensionReceived();
 		void onDisconnected();
 
 		inline void revokePendingSolutions();
