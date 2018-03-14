@@ -17,7 +17,7 @@ namespace XTest::Manager::Internal
 	private:
 		SolutionId id;
 		ProblemId problemId;
-		const Problem *problem;
+		Problem *problem;
 		Language language;
 		TestingPolicy testingPolicy;
 		SolutionState state;
@@ -41,7 +41,7 @@ namespace XTest::Manager::Internal
 	public:
 		inline SolutionId getId() const { return id; }
 		inline ProblemId getProblemId() const { return problemId; }
-		inline const Problem* getProblem() const { return problem; }
+		inline Problem* getProblem() const { return problem; }
 		inline Language getLanguage() const { return language; }
 		inline TestingPolicy getTestingPolicy() const { return testingPolicy; }
 		inline SolutionState getState() const { return state; }

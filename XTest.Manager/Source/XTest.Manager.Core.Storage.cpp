@@ -22,32 +22,25 @@ bool Storage::startup()
 	diskWorkerThread.create(DiskWorkerThreadMain, this);
 }
 
-void Storage::createSolutionAsync(const char* source, uint32 sourceLength,
+void Storage::asyncCreateSolution(const char* source, uint32 sourceLength,
 	Language language, ProblemId problemId, TestingPolicy testingPolicy)
 {
 	Problem *problem = problemCache.find(problemId);
 
 	Solution *solution = solutionAllocator.allocate();
 	solution->problemId = problemId;
+	solution->problem = problem;
 	solution->language = language;
 	solution->testingPolicy = testingPolicy;
 	solution->state = SolutionState::Waiting;
 	solution->source = source;
 	solution->sourceLength = sourceLength;
-	solution->result = { 0 };
+	solution->result = { };
 
-	if (problem)
-	{
-		solutionCache.insert(solution);
-		core.onStorageSolutionCreationComplete(SubmitSolutionResult::Success, solution);
-	}
-	else
-	{
-		DiskWorkerQueueItem item;
-		item.type = DiskWorkerQueueItem::Type::CheckProblemFileAndCompleteSolutionCreation;
-		item.checkProblemFileAndCompleteSolutionCreation.solution = solution;
-		diskWorkerQueue.enqueue(item);
-	}
+	DiskWorkerQueueItem item;
+	item.type = DiskWorkerQueueItem::Type::CreateSolutionRecord;
+	item.createSolutionRecord.solution = solution;
+	diskWorkerQueue.enqueue(item);
 }
 
 uint32 __stdcall Storage::DiskWorkerThreadMain(Storage* self)
@@ -74,40 +67,72 @@ void Storage::diskWorkerThreadMain()
 		DiskWorkerQueueItem item = diskWorkerQueue.dequeue();
 		switch (item.type)
 		{
-			case DiskWorkerQueueItem::Type::CheckProblemFileAndCompleteSolutionCreation:
-			{
-				auto& args = item.checkProblemFileAndCompleteSolutionCreation;
-				ProblemId problemId = args.solution->getProblemId();
-
-				bool result = false;
-				for each (ProblemFile& file in problemFiles)
-				{
-					if (!file.isOpened())
-					{
-						result = file.open(problemId);
-						break;
-					}
-				}
-
-				if (result)
-				{
-					core.onStorageSolutionCreationComplete(SubmitSolutionResult::Success, args.solution);
-				}
-				else
-				{
-					solutionAllocator.release(args.solution);
-					core.onStorageSolutionCreationComplete(SubmitSolutionResult::SystemError, args.solution);
-				}
-
+			case DiskWorkerQueueItem::Type::CreateSolutionRecord:
+				diskWorker_createSolutionRecord(item.createSolutionRecord.solution);
 				break;
-			}
 
-		default:
-			Debug::Crash(DbgMsgFmt("invalid DiskWorkerQueueItem::Type"));
+			default:
+				Debug::Crash(DbgMsgFmt("invalid DiskWorkerQueueItem::Type"));
 		}
 	}
 
 	core.onStorageShutdownComplete();
+}
+
+inline void Storage::diskWorker_createSolutionRecord(Solution* const solution)
+{
+	Debug::CrashConditionOnDebug(solution->getSource() == nullptr,
+		DbgMsgFmt("invalid solution (no source attached)"));
+
+	ProblemId problemId = solution->getProblemId();
+	Problem *problem = solution->getProblem();
+
+	// check if problem was loaded when solution was submitted
+	if (problem)
+		goto label_createSolutionRecordAndReportResult;
+
+	// check if problem was loaded while this solution processing was in disk queue
+	Problem *problem = problemCache.find(problemId);
+	if (problem)
+		goto label_createSolutionRecordAndReportResult;
+
+	// find free or least recently used file
+	ProblemFile *freeFile = nullptr;
+	for each (ProblemFile& file in problemFiles)
+	{
+		if (!file.isOpened())
+		{
+			freeFile = &file;
+			break;
+		}
+	}
+
+	if (!freeFile)
+	{
+		// TODO: add handling for situations when least recently used file has some
+		//		pending IO operations
+
+		freeFile = ...; // find least recently used file
+		freeFile->close();
+	}
+
+	// try to open problem
+	problem = problemAllocator.allocate();
+	if (freeFile->open(problemId, *problem))
+		goto label_createSolutionRecordAndReportResult;
+
+	// problem file does not exist or is corrupted. Can't create solution
+	problemAllocator.release(problem);
+	solutionAllocator.release(solution);
+	core.onStorageSolutionCreationComplete(SubmitSolutionResult::SystemError, solution);
+	return;
+
+
+label_createSolutionRecordAndReportResult:
+	solutionFiles.syncCreateSolutionRecord(problemId, solution->getLanguage(),
+		solution->getTestingPolicy(), solution->getSource(), solution->getSourceLength());
+
+	core.onStorageSolutionCreationComplete(SubmitSolutionResult::Success, solution);
 }
 
 inline bool Storage::loadConfigFile()

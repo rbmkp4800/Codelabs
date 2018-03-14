@@ -36,13 +36,13 @@ namespace XTest::Manager::_Core
 			enum class Type : uint8
 			{
 				None = 0,
-				CheckProblemFileAndCompleteSolutionCreation = 1,
+				CreateSolutionRecord,
 			} type;
 
 			union
 			{
-				Solution* solution;
-			} checkProblemFileAndCompleteSolutionCreation;
+				Internal::Solution *solution;
+			} createSolutionRecord;
 		};
 
 		using DiskWorkerQueue = XLib::ThreadSafeCyclicQueue<DiskWorkerQueueItem, 6,
@@ -66,6 +66,8 @@ namespace XTest::Manager::_Core
 		static uint32 __stdcall DiskWorkerThreadMain(Storage* self);
 		void diskWorkerThreadMain();
 
+		inline void diskWorker_createSolutionRecord(Internal::Solution* solution);
+
 		inline bool loadConfigFile();
 
 		inline ManagerCore& getCore();
@@ -74,7 +76,7 @@ namespace XTest::Manager::_Core
 		bool startup();
 		void shutdown();
 
-		void createSolutionAsync(const char* source, uint32 sourceLength,
+		void asyncCreateSolution(const char* source, uint32 sourceLength,
 			Language language, ProblemId problemId, TestingPolicy testingPolicy);
 
 		void fetchSolutionAsync();

@@ -32,7 +32,7 @@ namespace
 	{
 		uint32 magic;
 		uint16 version;
-		uint64 workspaceId;
+		//uint64 workspaceId;
 	};
 
 	struct IndexFileRecord
@@ -54,15 +54,14 @@ namespace
 
 	// solutions file =======================================================================//
 	//                 solutions file structure
-	// +--------+----+-------------+-----------------+-----------+----
-	// | header | 00 | index table |    segment 1    | segment 2 |  ...
-	// +--------+----+-------------+-----------------+-----------+----
+	// +--------+------------------+-----------------+-----------+----
+	// | header |  seg size table  |    segment 1    | segment 2 |  ...
+	// +--------+------------------+-----------------+-----------+----
 	// \________4096 bytes________/ \_______________/ \_________/   ...
 	//        (index block)              M bytes        N bytes 
 	//
 	//  * index table entry holds the length of corresponding segment
 	//    to get absolute index, first need to take prefix sum
-	// TODO: add checksum to index block
 	//
 	//
 	// TODO:       solutions file segment structure
@@ -71,8 +70,10 @@ namespace
 	struct SolutionsFileHeader
 	{
 		uint32 magic;
+		uint16 indexBlockChecksum;
 		uint16 version;
-		uint64 workspaceId;
+
+		//uint64 workspaceId;
 	};
 
 	class SolutionsFileConfig abstract final
@@ -82,10 +83,11 @@ namespace
 		static constexpr uint16 SupportedVersion = 0x0001;
 		//static constexpr uint16 BlockMagicValue = 0x7D036E96;
 
-		using IndexType = uint16;
+		using AlignedSegmentSizeType = uint16;
+
 		static constexpr uint32 IndexBlockSize = 4096;
 		static constexpr uint32 SegmentsPerFile =
-			(IndexBlockSize - sizeof(SolutionsFileHeader)) / sizeof(IndexType);
+			(IndexBlockSize - sizeof(SolutionsFileHeader)) / sizeof(AlignedSegmentSizeType);
 
 		static constexpr uint32 SolutionsPerSegment = 16;
 		static constexpr uint32 SegmentAlignment = 32;
@@ -93,14 +95,16 @@ namespace
 
 	struct SolutionsFileIndexBlock
 	{
-		SolutionsFileConfig::IndexType segmentsIndexTable[SolutionsFileConfig::SegmentsPerFile];
+		SolutionsFileHeader header;
+
+		SolutionsFileConfig::AlignedSegmentSizeType
+			segmentsSizeTable[SolutionsFileConfig::SegmentsPerFile];
 	};
 
 	struct SolutionsFileSegmentHeader
 	{
 		uint16 magic;
-		SolutionsFileConfig::IndexType segmentLength;
-		uint32 checksum;
+		uint16 checksum;
 		struct
 		{
 			ProblemId problemId;
@@ -180,13 +184,29 @@ bool SolutionFiles::open()
 			errorMessage = DbgMsgFmt("invalid index file size");
 			goto label_error;
 		}
-		workspaceId = header.workspaceId;
+		//workspaceId = header.workspaceId;
 	}
 
 label_error:
 	indexFile.close();
 
-	workspaceId = 0;
+	//workspaceId = 0;
 
 	return true;
+}
+
+void SolutionFiles::close()
+{
+	totalSolutionCount = 0;
+}
+
+SolutionId SolutionFiles::syncCreateSolutionRecord(ProblemId problemId, Language language,
+	TestingPolicy testingPolicy, const char* source, uint32 sourceLength)
+{
+
+
+	SolutionId solutionId = SolutionId(totalSolutionCount);
+	totalSolutionCount++;
+
+	return solutionId;
 }
